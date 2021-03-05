@@ -4,6 +4,7 @@ import com.example.solace.decode.Services.ChannelService;
 import com.example.solace.decode.Services.MessageService;
 import com.example.solace.decode.messaging.MessagingService;
 import com.example.solace.decode.model.Channel;
+import com.example.solace.decode.model.ChannelCategory;
 import com.example.solace.decode.model.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,13 @@ public class ChannelController {
     public List<Message> getMessagesByChannel(@PathVariable Integer id) {
         List<Message> messages = this.messageService.getChannelMessages(id);
         return messages;
+    }
+
+    @CrossOrigin
+    @GetMapping("{id}/categories")
+    public List<ChannelCategory> getCategoriesByChannel(@PathVariable Integer id) {
+        List<ChannelCategory> categories = this.channelService.getChannelCategories(id);
+        return categories;
     }
 
     @CrossOrigin

@@ -1,6 +1,10 @@
 package com.example.solace.decode.messaging;
 
+import com.example.solace.decode.model.Channel;
+import com.example.solace.decode.model.ChannelCategory;
 import com.example.solace.decode.model.Message;
+import com.example.solace.decode.repository.ChannelCategoriesRepository;
+import com.example.solace.decode.repository.ChannelRepository;
 import com.example.solace.decode.repository.MessageJPARepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +12,7 @@ import com.solacesystems.jcsmp.*;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Service
 public class MessagingService {
@@ -22,9 +27,13 @@ public class MessagingService {
     private ObjectMapper objectMapper;
     private XMLMessageConsumer cons;
     private MessageJPARepository messageJPARepository;
+    private ChannelRepository channelRepository;
+    private ChannelCategoriesRepository channelCategoriesRepository;
 
-    public MessagingService(MessageJPARepository messageJPARepository) throws Exception {
+    public MessagingService(MessageJPARepository messageJPARepository, ChannelRepository channelRepository, ChannelCategoriesRepository channelCategoriesRepository) throws Exception {
         this.messageJPARepository = messageJPARepository;
+        this.channelCategoriesRepository = channelCategoriesRepository;
+        this.channelRepository = channelRepository;
         this.url = "tcps://mr1rvhmgxn1b0t.messaging.solace.cloud:55443";
         this.vpnName = "decode";
         this.userName = "solace-cloud-client";
@@ -64,13 +73,30 @@ public class MessagingService {
                         System.out.printf("TextMessage received: '%s'%n",
                                 ((TextMessage) msg).getText());
                     } else {
+                        if (msg.getDestination().getName().equals("summary")) {
+                            byte[] body = msg.getAttachmentByteBuffer().array();
+                            String content = new String(body, StandardCharsets.UTF_8);
+                            String id = "1";
+                            Channel channelToUpdate = channelRepository.getOne(id);
+                            channelToUpdate.setSummary(content);
+                            channelRepository.save(channelToUpdate);
+                        }
+
                         byte[] body = msg.getAttachmentByteBuffer().array();
                         String content = new String(body, StandardCharsets.UTF_8);
                         JsonNode jsonNode = objectMapper.readTree(content);
-                        String type = jsonNode.get("type").asText();
-                        if (type.equals("message")) {
-                            Message message = objectMapper.readValue(content, Message.class);
-                            MessagingService.this.messageJPARepository.save(message);
+                        if (msg.getDestination().getName().equals("categories")) {
+                            Integer id = 1;
+                            List<ChannelCategory> oldCat = channelCategoriesRepository.findCategoriesByChannel(id);
+                            channelCategoriesRepository.deleteAll(oldCat);
+
+                        }
+                        else {
+                            String type = jsonNode.get("type").asText();
+                            if (type.equals("message")) {
+                                Message message = objectMapper.readValue(content, Message.class);
+                                MessagingService.this.messageJPARepository.save(message);
+                            }
                         }
                         System.out.println("Message received.");
                     }

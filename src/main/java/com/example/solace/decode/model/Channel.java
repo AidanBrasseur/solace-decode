@@ -2,7 +2,6 @@ package com.example.solace.decode.model;
 
 import javax.persistence.*;
 import java.lang.String;
-import java.util.List;
 
 @Entity
 @Table(name = "channel")
@@ -17,7 +16,18 @@ public class Channel {
     @Column(nullable=false)
     private String type  = "channel";
 
-//    @OneToMany(mappedBy="channel",  cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval =  true)
+    @Column
+    private String summary;
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    //    @OneToMany(mappedBy="channel",  cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval =  true)
 //    private List<Message> messages;
 
     public Integer getId() {
